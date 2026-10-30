@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breathing Rate Graph - Grade 8 STEAM</title>
+<style>
+  :root{
+    --ink:#1c2430; --muted:#5a6572; --accent:#0b5cad; --accent-dark:#084a8a;
+    --ok:#177245; --bad:#b3261e; --card:#ffffff; --bg:#eef2f6; --line:#d4dce4;
+    --soft:#f4f8fc;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45;}
+  .wrap{max-width:1020px;margin:0 auto;padding:16px 14px 48px;}
+  header{margin:10px 0 14px;}
+  h1{font-size:1.7rem;margin:0 0 2px;}
+  h2{font-size:1.25rem;margin:0 0 8px;}
+  .subtitle{color:var(--muted);font-size:1rem;margin:0 0 8px;}
+  .instruction{font-size:1.02rem;margin:0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin:14px 0;box-shadow:0 1px 3px rgba(20,40,60,.06);}
+  .card p{margin:6px 0;}
+  button{font:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:9px 16px;border-radius:8px;min-height:44px;font-weight:600;}
+  button:hover{background:var(--accent-dark);}
+  button.secondary{background:#fff;color:var(--accent);}
+  button.secondary:hover{background:var(--soft);}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid #f2b01e;outline-offset:2px;}
+  .tablewrap{max-width:480px;margin-top:10px;}
+  table.freq{border-collapse:collapse;width:100%;font-size:.98rem;}
+  table.freq th,table.freq td{border:1px solid var(--line);padding:5px 8px;text-align:left;}
+  table.freq th{background:var(--soft);}
+  table.freq td.valcell{width:150px;}
+  input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    min-height:44px;width:120px;}
+  input[type=text]{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;min-height:44px;}
+  input.titlein{width:100%;max-width:560px;font-size:1.02rem;}
+  .field{display:flex;flex-direction:column;gap:3px;margin:4px 0 10px;}
+  .field label{font-size:.88rem;color:var(--muted);font-weight:600;}
+  .graphwrap{margin-top:6px;}
+  svg.chart{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:8px;}
+  .binhelp{color:var(--muted);font-size:.92rem;margin:8px 0 0;min-height:1.3em;}
+  .rbq{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0 0;background:#fff;}
+  .rbq p{margin:0 0 8px;font-weight:600;}
+  .rbq textarea{font:inherit;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;min-height:56px;resize:vertical;}
+  .checkrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 0;}
+  .panel{border:1px solid var(--ok);background:#f2faf5;border-radius:10px;padding:14px 16px;margin:14px 0 0;}
+  .panel h3{margin:0 0 6px;font-size:1.08rem;}
+  .panel p{margin:6px 0;}
+  .panel ol{margin:6px 0;padding-left:22px;}
+  .panel li{margin:8px 0;}
+  .panel .keyq{font-weight:600;margin:0;}
+  .panel .keya{margin:2px 0 0;}
+  .hidden{display:none !important;}
+  .summarybox{background:var(--soft);border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.92rem;white-space:pre-wrap;word-break:break-word;margin:10px 0 0;}
+  .copyfb{font-weight:600;}
+  .footnote{color:var(--muted);font-size:.92rem;margin:18px 0 0;}
+  @media (max-width:680px){
+    h1{font-size:1.4rem;}
+    input[type=number]{width:100px;}
+  }
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .card{box-shadow:none;break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="appTitle"></h1>
+    <p class="subtitle" id="appSubtitle"></p>
+    <p class="instruction" id="appIntro"></p>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="step1h">
+      <h2 id="step1h">Step 1: Your data</h2>
+      <p id="tableNote"></p>
+      <div class="tablewrap">
+        <table class="freq" id="dataTable"></table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="step2h">
+      <h2 id="step2h">Step 2: Your graph</h2>
+      <div class="field">
+        <label for="titleInput">Title for your graph</label>
+        <input type="text" id="titleInput" class="titlein" autocomplete="off" placeholder="Insert a title for your graph here">
+      </div>
+      <div class="graphwrap">
+        <svg class="chart" id="chart" viewBox="0 0 720 440" role="img" aria-label="Your bar graph"></svg>
+      </div>
+      <p class="binhelp" id="graphNote" aria-live="polite"></p>
+    </section>
+
+    <section class="card" aria-labelledby="step3h">
+      <h2 id="step3h">Step 3: Think it through</h2>
+      <p>Answer each question in your own words first. When you are ready, open the answer key and compare your graph and your answers with it.</p>
+      <div id="questions"></div>
+      <div class="checkrow no-print">
+        <button type="button" id="showAnswersBtn" aria-expanded="false" aria-controls="reveal">Show the answers</button>
+      </div>
+      <div id="reveal" class="panel hidden" tabindex="-1"></div>
+    </section>
+
+    <section class="card" aria-labelledby="step4h">
+      <h2 id="step4h">Step 4: Your summary</h2>
+      <p>Your summary gathers your title, your data, and your answers in one place, ready to print or to copy into your portfolio.</p>
+      <div id="summaryText" class="summarybox"></div>
+      <div class="checkrow no-print">
+        <button type="button" id="printBtn">Print</button>
+        <button type="button" id="copyBtn" class="secondary">Copy summary</button>
+        <span class="copyfb" id="copyFeedback" aria-live="polite"></span>
+      </div>
+    </section>
+  </main>
+
+  <p class="footnote">Formative practice only: nothing here is scored, nothing is saved, and nothing is sent anywhere. This page works offline.</p>
+</div>
+
+<script>
+"use strict";
+var CONFIG = {
+  "appTitle": "Breathing Rate Graph",
+  "subtitle": "Grade 8 STEAM, Body, Mind & Soul, Lesson 3: Circulatory and Respiratory Systems",
+  "intro": "In this extension activity, you will measure your own breathing rate at four activity levels, build a bar graph from your results, then compare your pattern with an example from the answer key.",
+  "tableNote": "Count your breaths for one full minute at each activity level and type in each number. Your graph builds itself as you type, and you can leave a row blank until you have measured it.",
+  "valueColumnLabel": "Breaths per minute",
+  "xAxisTitle": "Type of Activity",
+  "yAxisTitle": "Breaths per Minute",
+  "barColor": "#f4a99f",
+  "defaultScale": {
+    "step": 2,
+    "max": 40
+  },
+  "rows": [
+    {
+      "label": "at rest",
+      "value": null
+    },
+    {
+      "label": "light exercise",
+      "value": null
+    },
+    {
+      "label": "moderate exercise",
+      "value": null
+    },
+    {
+      "label": "intense exercise",
+      "value": null
+    }
+  ],
+  "keyTitle": "The Change in Breathing Rate with Increasing Activity Level",
+  "keyRows": [
+    {
+      "label": "at rest",
+      "value": 13
+    },
+    {
+      "label": "light exercise",
+      "value": 19
+    },
+    {
+      "label": "moderate exercise",
+      "value": 23
+    },
+    {
+      "label": "intense exercise",
+      "value": 34
+    }
+  ],
+  "keyNote": "The bars in the answer key example climb at every step: the breathing rate rises as the activity level increases. Your numbers will not match the example exactly, but your bars should climb in the same pattern.",
+  "questions": [
+    {
+      "q": "At which activity level was your breathing rate the lowest?",
+      "a": "At rest. In the answer key example, the rate at rest is 13 breaths per minute, the lowest bar on the graph."
+    },
+    {
+      "q": "At which activity level was your breathing rate the highest?",
+      "a": "During intense exercise. In the answer key example, the rate reaches 34 breaths per minute, the highest bar on the graph."
+    },
+    {
+      "q": "Describe how your breathing rate changed as the activity level increased.",
+      "a": "It increased at every step. In the answer key example, the rate climbs from 13 breaths per minute at rest to 19 for light exercise, 23 for moderate exercise, and 34 for intense exercise."
+    }
+  ]
+};
+
+// ==LOGIC==
+// Pure logic for the graphing app family. No DOM access in this section.
+// The graph is drawn from exactly the numbers the table holds: the same
+// parsed entries feed the bars, the summary, and the harness checks.
+
+var NICE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+
+// Parse a table cell: a finite number >= 0, else null (blank bar).
+function parseValue(raw) {
+  if (raw === null || raw === undefined) return null;
+  var s = String(raw).trim();
+  if (s === "") return null;
+  var n = Number(s);
+  if (!isFinite(n) || n < 0) return null;
+  return n;
+}
+
+// Choose the vertical scale. The config's default scale (the one the
+// answer key uses) holds until a value outgrows it; then pick the
+// smallest nice step that keeps at most 25 intervals.
+function computeScale(maxVal, dflt) {
+  if (maxVal === null || maxVal === undefined || !(maxVal > 0) || maxVal <= dflt.max) {
+    return { step: dflt.step, max: dflt.max };
+  }
+  for (var i = 0; i < NICE_STEPS.length; i++) {
+    var step = NICE_STEPS[i];
+    var ticks = Math.ceil(maxVal / step);
+    if (ticks <= 25) {
+      var max = step * ticks;
+      if (max === maxVal) max += step;
+      return { step: step, max: max };
+    }
+  }
+  return { step: 1000, max: Math.ceil(maxVal / 1000) * 1000 + 1000 };
+}
+
+// Fixed plot box inside the 720 x 440 viewBox.
+var PLOT = { left: 78, right: 704, top: 58, bottom: 352 };
+
+// Bar rectangles for the given values (nulls give null: slot kept, no bar).
+function barGeometry(values, scale) {
+  var n = values.length;
+  var slot = (PLOT.right - PLOT.left) / n;
+  var bw = Math.min(slot * 0.62, 120);
+  var plotH = PLOT.bottom - PLOT.top;
+  var out = [];
+  for (var i = 0; i < n; i++) {
+    var v = values[i];
+    if (v === null || v === undefined) { out.push(null); continue; }
+    var cx = PLOT.left + slot * i + slot / 2;
+    var h = (v / scale.max) * plotH;
+    out.push({ x: cx - bw / 2, y: PLOT.bottom - h, width: bw, height: h, cx: cx, value: v });
+  }
+  return out;
+}
+
+// Y pixel for a scale value.
+function yFor(value, scale) {
+  return PLOT.bottom - (value / scale.max) * (PLOT.bottom - PLOT.top);
+}
+
+// Split a category label into at most two lines, like the answer key does.
+function wrapLabel(label) {
+  if (label.length <= 10 || label.indexOf(" ") < 0) return [label];
+  var words = label.split(" ");
+  var best = 1, bestDiff = Infinity;
+  for (var i = 1; i < words.length; i++) {
+    var a = words.slice(0, i).join(" ").length;
+    var b = words.slice(i).join(" ").length;
+    if (Math.abs(a - b) < bestDiff) { bestDiff = Math.abs(a - b); best = i; }
+  }
+  return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+}
+
+// Format a number for display: integers plain, decimals trimmed.
+function formatVal(v) {
+  if (v === null || v === undefined) return "";
+  var r = Math.round(v * 100) / 100;
+  return String(r);
+}
+
+// Plain-text summary: title, data table, and the student's answers.
+function buildSummaryText(cfg, titleText, entries, answers) {
+  var lines = [];
+  lines.push(cfg.appTitle);
+  lines.push(cfg.subtitle);
+  lines.push("");
+  lines.push("My graph title: " + (titleText && titleText.trim() ? titleText.trim() : "(no title yet)"));
+  lines.push("");
+  lines.push("My data (" + cfg.xAxisTitle + " / " + cfg.valueColumnLabel + "):");
+  for (var i = 0; i < entries.length; i++) {
+    lines.push(entries[i].label + ": " + (entries[i].value === null ? "not entered" : formatVal(entries[i].value)));
+  }
+  lines.push("");
+  lines.push("My answers:");
+  for (var j = 0; j < cfg.questions.length; j++) {
+    lines.push((j + 1) + ". " + cfg.questions[j].q);
+    var a = answers && answers[j] ? String(answers[j]).trim() : "";
+    lines.push("   " + (a ? a.replace(/\n/g, "\n   ") : "(not answered yet)"));
+  }
+  return lines.join("\n");
+}
+// ==END LOGIC==
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function num(n) { return String(Math.round(n * 10) / 10); }
+
+var valueInputs = [];
+var answerInputs = [];
+
+function readEntries() {
+  var out = [];
+  for (var i = 0; i < CONFIG.rows.length; i++) {
+    out.push({ label: CONFIG.rows[i].label, value: parseValue(valueInputs[i].value) });
+  }
+  return out;
+}
+function readAnswers() {
+  var out = [];
+  for (var i = 0; i < answerInputs.length; i++) out.push(answerInputs[i].value);
+  return out;
+}
+
+function render() {
+  var entries = readEntries();
+  var values = entries.map(function (e) { return e.value; });
+  var maxVal = null;
+  values.forEach(function (v) { if (v !== null && (maxVal === null || v > maxVal)) maxVal = v; });
+  var scale = computeScale(maxVal, CONFIG.defaultScale);
+  var bars = barGeometry(values, scale);
+  var title = document.getElementById("titleInput").value;
+  var s = "";
+
+  if (title.trim()) {
+    s += '<text x="360" y="32" text-anchor="middle" font-size="19" font-weight="600" fill="#1c2430">' + esc(title.trim()) + "</text>";
+  }
+  // Gridlines and tick labels
+  var tickCount = Math.round(scale.max / scale.step);
+  for (var k = 0; k <= tickCount; k++) {
+    var tv = k * scale.step;
+    var y = yFor(tv, scale);
+    s += '<line x1="' + PLOT.left + '" y1="' + num(y) + '" x2="' + PLOT.right + '" y2="' + num(y) + '" stroke="' + (k === 0 ? "#8a97a5" : "#dbe5ee") + '" stroke-width="1"/>';
+    s += '<text x="' + (PLOT.left - 8) + '" y="' + num(y + 4) + '" text-anchor="end" font-size="13" fill="#5a6572">' + formatVal(tv) + "</text>";
+  }
+  // Bars and value labels
+  for (var i = 0; i < bars.length; i++) {
+    var b = bars[i];
+    if (!b) continue;
+    s += '<rect class="bar" data-index="' + i + '" data-value="' + formatVal(b.value) + '" x="' + num(b.x) + '" y="' + num(b.y) + '" width="' + num(b.width) + '" height="' + num(b.height) + '" fill="' + CONFIG.barColor + '" stroke="#1c2430" stroke-width="1.5"/>';
+    s += '<text x="' + num(b.cx) + '" y="' + num(b.y - 6) + '" text-anchor="middle" font-size="13" font-weight="600" fill="#1c2430">' + formatVal(b.value) + "</text>";
+  }
+  // Category labels
+  for (var j = 0; j < entries.length; j++) {
+    var slot = (PLOT.right - PLOT.left) / entries.length;
+    var cx = PLOT.left + slot * j + slot / 2;
+    var lines = wrapLabel(entries[j].label);
+    for (var li = 0; li < lines.length; li++) {
+      s += '<text x="' + num(cx) + '" y="' + (372 + li * 16) + '" text-anchor="middle" font-size="13.5" fill="#1c2430">' + esc(lines[li]) + "</text>";
+    }
+  }
+  // Axis titles
+  s += '<text x="360" y="424" text-anchor="middle" font-size="14.5" fill="#1c2430">' + esc(CONFIG.xAxisTitle) + "</text>";
+  var midY = (PLOT.top + PLOT.bottom) / 2;
+  s += '<text transform="translate(20 ' + midY + ') rotate(-90)" text-anchor="middle" font-size="14.5" fill="#1c2430">' + esc(CONFIG.yAxisTitle) + "</text>";
+
+  var svg = document.getElementById("chart");
+  svg.innerHTML = s;
+  var desc = values.every(function (v) { return v === null; })
+    ? "Empty bar graph frame. Enter values in the data table to build the graph."
+    : "Bar graph. " + entries.map(function (e) { return e.label + ": " + (e.value === null ? "not entered" : formatVal(e.value)); }).join(". ") + ".";
+  svg.setAttribute("aria-label", desc);
+
+  document.getElementById("graphNote").textContent = maxVal === null
+    ? "Enter values in the data table and your bars will appear here."
+    : "";
+  updateSummary();
+}
+
+function updateSummary() {
+  var text = buildSummaryText(CONFIG,
+    document.getElementById("titleInput").value,
+    readEntries(), readAnswers());
+  document.getElementById("summaryText").textContent = text;
+}
+
+function buildReveal() {
+  var keyList = CONFIG.keyRows.map(function (r) { return esc(r.label) + ": " + formatVal(r.value); }).join(", ");
+  var h = "<h3>Answer key</h3>";
+  h += "<p>The answer key titles its graph: <strong>" + esc(CONFIG.keyTitle) + "</strong>. Compare it with the title you chose.</p>";
+  h += "<p><strong>Answer key data</strong> (" + esc(CONFIG.valueColumnLabel.toLowerCase()) + "): " + keyList + ".</p>";
+  h += "<p>" + esc(CONFIG.keyNote) + "</p>";
+  h += "<ol>";
+  CONFIG.questions.forEach(function (q) {
+    h += '<li><p class="keyq">' + esc(q.q) + '</p><p class="keya">' + esc(q.a) + "</p></li>";
+  });
+  h += "</ol>";
+  document.getElementById("reveal").innerHTML = h;
+}
+
+function init() {
+  document.getElementById("appTitle").textContent = CONFIG.appTitle;
+  document.getElementById("appSubtitle").textContent = CONFIG.subtitle;
+  document.getElementById("appIntro").textContent = CONFIG.intro;
+  document.getElementById("tableNote").textContent = CONFIG.tableNote;
+
+  var table = document.getElementById("dataTable");
+  var html = "<thead><tr><th scope=\"col\">" + esc(CONFIG.xAxisTitle) + "</th><th scope=\"col\">" + esc(CONFIG.valueColumnLabel) + "</th></tr></thead><tbody>";
+  CONFIG.rows.forEach(function (r, i) {
+    html += '<tr><th scope="row">' + esc(r.label) + '</th><td class="valcell"><input type="number" min="0" step="any" inputmode="decimal" id="val' + i + '" aria-label="' + esc(r.label + ", " + CONFIG.valueColumnLabel) + '" value="' + (r.value === null ? "" : formatVal(r.value)) + '"></td></tr>';
+  });
+  html += "</tbody>";
+  table.innerHTML = html;
+  valueInputs = CONFIG.rows.map(function (r, i) { return document.getElementById("val" + i); });
+  valueInputs.forEach(function (inp) { inp.addEventListener("input", render); });
+
+  var qwrap = document.getElementById("questions");
+  var qh = "";
+  CONFIG.questions.forEach(function (q, i) {
+    qh += '<div class="rbq"><p><label for="ans' + i + '">' + (i + 1) + ". " + esc(q.q) + '</label></p><textarea id="ans' + i + '" aria-describedby="step3h"></textarea></div>';
+  });
+  qwrap.innerHTML = qh;
+  answerInputs = CONFIG.questions.map(function (q, i) { return document.getElementById("ans" + i); });
+  answerInputs.forEach(function (inp) { inp.addEventListener("input", updateSummary); });
+
+  document.getElementById("titleInput").addEventListener("input", render);
+
+  var btn = document.getElementById("showAnswersBtn");
+  var reveal = document.getElementById("reveal");
+  buildReveal();
+  btn.addEventListener("click", function () {
+    var opening = reveal.classList.contains("hidden");
+    reveal.classList.toggle("hidden", !opening);
+    btn.setAttribute("aria-expanded", opening ? "true" : "false");
+    btn.textContent = opening ? "Hide the answers" : "Show the answers";
+    if (opening) reveal.focus();
+  });
+
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var text = document.getElementById("summaryText").textContent;
+    var fb = document.getElementById("copyFeedback");
+    function done(ok) {
+      fb.textContent = ok ? "Copied. You can paste it into your portfolio." : "Copy did not work in this browser. You can print instead.";
+    }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      done(ok);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
